@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codex INS lookup &mdash; CXG 36-1989 (rev. 2026)</title>
+<style>
+:root{
+  --ink:#2A1B10; --cocoa:#4A2C17; --cocoa-mid:#6B4423; --caramel:#B5793A;
+  --caramel-soft:#E3C9A6; --cream:#FAF3E7; --parchment:#F3E7D6; --paper:#FFFDF8;
+  --rule:#DFCDB2; --muted:#7A6A58;
+  --yes:#1F6B3A; --no:#9C3B1B;
+  --serif:Cambria,"Hoefler Text",Georgia,"Times New Roman",serif;
+  --sans:"Helvetica Neue",Arial,Helvetica,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--cream); color:var(--ink); font-family:var(--sans);
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+a{color:var(--cocoa-mid)}
+
+/* ---------- masthead + search (the hero) ---------- */
+.top{background:var(--cocoa); color:var(--cream); padding:22px 24px 26px}
+.top-inner{max-width:1180px;margin:0 auto}
+.wordmark{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.wordmark h1{font-family:var(--serif);font-size:21px;font-weight:700;margin:0;letter-spacing:.01em}
+.wordmark p{margin:0;font-size:12.5px;color:var(--caramel-soft)}
+.searchwrap{position:relative}
+#q{
+  width:100%; font-family:var(--serif); font-size:27px; line-height:1.2;
+  padding:16px 52px 16px 20px; color:var(--ink); background:var(--paper);
+  border:2px solid var(--caramel); border-radius:3px; outline:none;
+}
+#q::placeholder{color:#AD9C86}
+#q:focus{border-color:var(--caramel-soft);box-shadow:0 0 0 3px rgba(227,201,166,.45)}
+#clear{
+  position:absolute; right:10px; top:50%; transform:translateY(-50%);
+  border:0; background:none; color:var(--muted); font-size:22px; line-height:1;
+  cursor:pointer; padding:6px 8px; border-radius:3px; display:none;
+}
+#clear:focus-visible{outline:2px solid var(--caramel)}
+.hint{margin:9px 2px 0;font-size:12.5px;color:var(--caramel-soft)}
+.hint kbd{
+  font-family:var(--sans);font-size:11px;background:var(--cocoa-mid);
+  border:1px solid #86603C;border-radius:3px;padding:1px 5px;
+}
+
+/* ---------- filter strip ---------- */
+.filters{background:var(--parchment);border-bottom:1px solid var(--rule);padding:12px 24px}
+.filters-inner{
+  max-width:1180px;margin:0 auto;display:flex;gap:18px;align-items:center;flex-wrap:wrap;
+}
+.field{display:flex;align-items:center;gap:7px;font-size:13px}
+.field label{color:var(--muted)}
+select{
+  font-family:var(--sans);font-size:13px;padding:5px 8px;color:var(--ink);
+  background:var(--paper);border:1px solid var(--rule);border-radius:3px;max-width:240px;
+}
+select:focus-visible{outline:2px solid var(--caramel);outline-offset:1px}
+.seg{display:flex;border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.seg button{
+  font-family:var(--sans);font-size:12.5px;padding:5px 12px;border:0;cursor:pointer;
+  background:var(--paper);color:var(--muted);border-right:1px solid var(--rule);
+}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--cocoa);color:var(--cream)}
+.seg button:focus-visible{outline:2px solid var(--caramel);outline-offset:-2px}
+#reset{
+  font:inherit;font-size:12.5px;background:none;border:0;color:var(--cocoa-mid);
+  text-decoration:underline;cursor:pointer;padding:4px
+}
+
+/* ---------- layout ---------- */
+.shell{max-width:1180px;margin:0 auto;padding:0 24px 90px;display:grid;
+  grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:0}
+.list-col{border-right:1px solid var(--rule);padding-right:22px}
+.detail-col{padding-left:24px}
+.count{font-size:12.5px;color:var(--muted);padding:14px 2px 8px}
+.count b{color:var(--ink);font-weight:600}
+
+/* ---------- results ledger ---------- */
+ol.results{list-style:none;margin:0;padding:0}
+ol.results li{border-bottom:1px solid var(--rule)}
+.row{
+  display:grid;grid-template-columns:78px minmax(0,1fr) 12px;gap:12px;align-items:baseline;
+  width:100%;text-align:left;background:none;border:0;font:inherit;color:inherit;
+  padding:9px 4px;cursor:pointer;
+}
+.row:hover{background:var(--parchment)}
+.row:focus-visible{outline:2px solid var(--caramel);outline-offset:-2px}
+.row[aria-current="true"]{background:var(--caramel-soft)}
+.ins{font-family:var(--serif);font-size:15px;font-weight:700;color:var(--cocoa);
+  font-variant-numeric:tabular-nums}
+.rname{font-size:14px}
+.rmeta{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.row .dot{width:9px;height:9px;border-radius:50%;align-self:center}
+.dot.y{background:var(--yes)} .dot.n{background:var(--no);opacity:.45}
+.row.group .ins{color:var(--cocoa-mid)}
+.row.group .rname{font-style:italic;color:var(--muted)}
+
+.empty{padding:34px 4px;color:var(--muted);font-size:14px;max-width:46ch}
+.empty b{color:var(--ink)}
+
+/* ---------- detail ---------- */
+.detail{position:sticky;top:18px;padding:18px 0 0;
+  max-height:calc(100vh - 92px);overflow:auto;overscroll-behavior:contain}
+.placeholder{color:var(--muted);font-size:14px;padding:26px 0;max-width:44ch}
+.card{background:var(--paper);border:1px solid var(--rule);border-radius:3px}
+.card-head{padding:18px 20px 15px;border-bottom:1px solid var(--rule)}
+.card-head .n{font-family:var(--serif);font-size:26px;font-weight:700;color:var(--cocoa);
+  display:block;font-variant-numeric:tabular-nums}
+.card-head h2{font-family:var(--serif);font-size:19px;font-weight:400;margin:3px 0 0;line-height:1.3}
+.tagline{margin:9px 0 0;font-size:12.5px;color:var(--muted)}
+.status{display:flex;gap:11px;padding:14px 20px;border-bottom:1px solid var(--rule)}
+.status .bar{width:4px;border-radius:2px;flex:none}
+.status.y .bar{background:var(--yes)} .status.n .bar{background:var(--no)}
+.status .verdict{font-weight:700;font-size:14px}
+.status.y .verdict{color:var(--yes)} .status.n .verdict{color:var(--no)}
+.status .sub{font-size:12.5px;color:var(--muted);margin-top:3px}
+.section{padding:14px 20px;border-bottom:1px solid var(--rule)}
+.section:last-child{border-bottom:0}
+.section h3{font-size:12px;font-weight:700;color:var(--muted);margin:0 0 8px;
+  letter-spacing:.02em}
+dl.map{margin:0}
+dl.map dt{font-size:13.5px;font-weight:600;color:var(--cocoa);margin-top:7px}
+dl.map dt:first-child{margin-top:0}
+dl.map dd{margin:1px 0 0;font-size:13.5px;color:var(--ink)}
+.src{display:grid;grid-template-columns:auto 1fr;gap:3px 16px;font-size:13px}
+.src dt{color:var(--muted)}
+.src dd{margin:0;font-variant-numeric:tabular-nums}
+.flagbox{background:#FBF0E4;border-left:3px solid var(--caramel);padding:11px 14px;
+  font-size:13px;line-height:1.5}
+.flagbox .verb{display:block;margin-top:7px;font-family:var(--serif);color:var(--no);
+  font-size:12.5px;word-break:break-word}
+
+/* ---------- footer disclaimer ---------- */
+.disclaimer{
+  position:fixed;left:0;right:0;bottom:0;background:var(--cocoa-mid);color:var(--caramel-soft);
+  font-size:13px;line-height:1.6;border-top:2px solid var(--caramel);z-index:30;
+  font-family:var(--sans);
+}
+.disclaimer div{max-width:1180px;margin:0 auto}
+.disclaimer p{margin:0;text-align:justify;color:var(--caramel-soft);font-size:13px;line-height:1.6}
+.disclaimer b{color:var(--cream)}
+.disclaimer .disc-header{
+  font-size:15px;font-weight:700;letter-spacing:.05em;color:var(--cream);
+  display:block;margin-bottom:3px;
+}
+/* collapsible footer */
+.disc-tab{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 24px;cursor:pointer;user-select:none;
+  background:var(--cocoa);border-bottom:1px solid rgba(181,121,58,0.4);
+}
+.disc-tab-label{
+  font-size:11.5px;font-weight:700;letter-spacing:.06em;color:var(--caramel-soft);
+  font-family:var(--sans);
+}
+.disc-tab-icon{
+  font-size:14px;color:var(--caramel);transition:transform .2s ease;line-height:1;
+}
+.disc-body{
+  padding:10px 24px 4px;overflow:hidden;
+  transition:max-height .25s ease, padding .25s ease;
+  max-height:300px;
+}
+.disc-body.collapsed{max-height:0;padding-top:0;padding-bottom:0;}
+.disc-tab-icon.collapsed{transform:rotate(180deg);}
+
+#back{display:none}
+
+/* attribution sits inside .disclaimer — see inline span */
+
+/* ---------- boot / diagnostics ---------- */
+#boot{
+  max-width:1180px;margin:16px auto;padding:14px 18px;background:#FBF0E4;
+  border-left:4px solid var(--caramel);font-size:13.5px;line-height:1.55;color:var(--ink);
+}
+#boot b{display:block;margin-bottom:4px}
+#boot code{font-family:var(--serif);color:var(--no);word-break:break-word}
+
+/* ---------- provisions table ---------- */
+table.prov{width:100%;border-collapse:collapse;font-size:12.5px}
+table.prov th{
+  text-align:left;font-weight:700;color:var(--muted);font-size:11.5px;
+  border-bottom:1px solid var(--rule);padding:0 8px 5px 0;
+}
+table.prov td{border-bottom:1px solid #EFE2CE;padding:6px 8px 6px 0;vertical-align:top}
+table.prov tr:last-child td{border-bottom:0}
+table.prov .cno{font-family:var(--serif);font-weight:700;color:var(--cocoa);white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+table.prov .lv{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600}
+table.prov .nt{color:var(--muted)}
+table.prov .yr{color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+table.prov tr.hit td{background:var(--caramel-soft)}
+details.notes{margin-top:11px;font-size:12.5px}
+details.notes summary{cursor:pointer;color:var(--cocoa-mid);padding:3px 0}
+details.notes dl{margin:7px 0 0}
+details.notes dt{font-weight:700;color:var(--cocoa);margin-top:6px}
+details.notes dd{margin:1px 0 0;color:var(--ink)}
+.scroller{overflow:visible}
+@media (max-width:880px){ .detail{max-height:none;overflow:visible} }
+
+@media (max-width:880px){
+  .shell{grid-template-columns:1fr;padding-bottom:110px}
+  .list-col{border-right:0;padding-right:0}
+  .detail-col{
+    position:fixed;top:0;right:0;bottom:0;left:0;background:var(--cream);z-index:20;overflow:auto;
+    padding:14px 16px 120px;display:none;
+  }
+  body.showing-detail .detail-col{display:block}
+  body.showing-detail{overflow:hidden}
+  .detail{position:static}
+  #back{
+    display:inline-block;font:inherit;font-size:13px;background:none;border:0;
+    color:var(--cocoa-mid);text-decoration:underline;cursor:pointer;padding:8px 2px;
+  }
+  #q{font-size:22px;padding:13px 46px 13px 15px}
+  .top{padding:16px 16px 20px}.filters{padding:11px 16px}.shell{padding-left:16px;padding-right:16px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .card{animation:rise .16s ease-out}
+  @keyframes rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="wordmark">
+      <h1>Codex INS lookup</h1>
+      <p>Class names and the International Numbering System for food additives &mdash; CXG 36-1989, revised 2026</p>
+    </div>
+    <div class="searchwrap">
+      <input id="q" type="search" autocomplete="off" autocorrect="off"
+             autocapitalize="none" spellcheck="false"
+             placeholder="INS number, additive name, functional class or purpose"
+             aria-label="Search food additives">
+      <button id="clear" type="button" aria-label="Clear search">&times;</button>
+    </div>
+    <p class="hint">Partial text, not case sensitive. Try <b>330</b>, <b>citric</b>, <b>antioxidant</b> or <b>glazing agent</b>. Press <kbd>/</kbd> to jump here.</p>
+  </div>
+</header>
+
+<div class="filters">
+  <div class="filters-inner">
+    <div class="field">
+      <label for="fc">Functional class</label>
+      <select id="fc"><option value="">Any</option></select>
+    </div>
+    <div class="field">
+      <label for="fp">Technological purpose</label>
+      <select id="fp"><option value="">Any</option></select>
+    </div>
+    <div class="field">
+      <label for="fk">Food category</label>
+      <select id="fk"><option value="">Any</option></select>
+    </div>
+    <div class="field">
+      <label id="gl">GSFA 2026</label>
+      <div class="seg" role="group" aria-labelledby="gl">
+        <button type="button" data-g="" aria-pressed="true">Any</button>
+        <button type="button" data-g="1" aria-pressed="false">Has a provision</button>
+        <button type="button" data-g="0" aria-pressed="false">None found</button>
+      </div>
+    </div>
+    <button id="reset" type="button">Reset</button>
+  </div>
+</div>
+
+<noscript>
+  <div id="boot"><b>This page needs JavaScript to search.</b>
+  Scripts appear to be turned off in this browser.</div>
+</noscript>
+
+<div id="boot">
+  <b>Starting the lookup&hellip;</b>
+  If this message stays on screen, the browser is showing the file without running its script.
+  On iPhone and iPad this happens when an HTML file is opened from the Files app, which previews
+  the page rather than loading it. Share the file to a browser app, or put it somewhere it can be
+  opened over a normal web address, and the search will work.
+</div>
+
+<main class="shell">
+  <div class="list-col">
+    <p class="count" id="count" aria-live="polite"></p>
+    <ol class="results" id="results"></ol>
+  </div>
+  <div class="detail-col" id="detailCol">
+    <button id="back" type="button">Back to results</button>
+    <div class="detail" id="detail">
+      <p class="placeholder">Choose an entry to see its functional classes and technological purposes as the source pairs them, its page references in CXG 36-1989, and whether the General Standard for Food Additives carries a provision for it.</p>
+    </div>
+  </div>
+</main>
+
+<div class="disclaimer">
+  <!-- toggle tab — always visible -->
+  <div class="disc-tab" id="discTab" onclick="toggleDisc()" role="button"
+       aria-expanded="true" aria-controls="discBody" title="Show / hide footnotes">
+    <span class="disc-tab-label">&#x1F4CB;&nbsp; FOOTNOTES &amp; DISCLAIMER</span>
+    <span class="disc-tab-icon" id="discIcon">&#x25B2;</span>
+  </div>
+  <!-- collapsible body -->
+  <div class="disc-body" id="discBody">
+    <div>
+      <p><b>Inclusion in the INS does not imply approval by Codex for use as food additives.</b>
+      The INS is an open list and the technological purposes shown are indicative, not exhaustive.
+      GSFA status records only whether a provision exists in CXS 192-1995 (rev. 2026) &mdash; not the food
+      category, maximum level or conditions attached. Malaysian permissions are set by the Food Regulations 1985.</p>
+      <p style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(227,201,166,0.3);">
+        <span class="disc-header">&#x26A0;&#xFE0F; DISCLAIMER</span>
+        This site is intended for <b>REFERENCE</b> purposes only and does not constitute an official
+        regulatory or enforcement document. For <b>ENFORCEMENT</b> purposes, refer to the respective
+        <b>ORIGINAL</b> Codex texts and the <b>Food Regulations 1985</b>.
+      </p>
+      <span style="display:block;text-align:right;font-size:10.5px;color:rgba(227,201,166,0.4);font-style:italic;letter-spacing:.03em;margin-top:5px;margin-bottom:6px;pointer-events:none;user-select:none;">Developed by Ts. Amira Zainudin © 2026</span>
+    </div>
+  </div>
+</div>
+
+<script>
+try{
+var DB = /*__DB__*/;
+var recs = DB.recs, CATS = DB.cats, NOTES = DB.notes, PROV = DB.prov;
+
+/* search index: INS + name + classes + purposes, with the source's typographic
+   apostrophe also indexed as a plain apostrophe and as no apostrophe at all */
+recs.forEach(r=>{
+  const raw = [r.i, r.n, r.c.join(' '), r.p.join(' ')].join(' ');
+  r.k = (raw + ' ' + raw.replace(/\u2019/g,"'") + ' ' + raw.replace(/\u2019/g,'')).toLowerCase();
+});
+
+var $ = function(s){ return document.querySelector(s); };
+var q=$('#q'), fc=$('#fc'), fp=$('#fp'), fk=$('#fk'), list=$('#results'),
+    countEl=$('#count'), detail=$('#detail'), clearBtn=$('#clear');
+var gFilter = '', selected = null, shown = [];
+
+DB.classes.forEach(function(c){ fc.add(new Option(c,c)); });
+DB.purposes.forEach(function(p){ fp.add(new Option(p,p)); });
+Object.keys(CATS).sort(function(a,b){
+  var A=a.split('.').map(Number), B=b.split('.').map(Number);
+  for(var i=0;i<Math.max(A.length,B.length);i++){
+    if((A[i]||0)!==(B[i]||0)) return (A[i]||0)-(B[i]||0);
+  }
+  return 0;
+}).forEach(function(k){ fk.add(new Option(k+'  '+CATS[k], k)); });
+
+const esc = s => String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+function matches(r){
+  const term = q.value.trim().toLowerCase();
+  if(term && !r.k.includes(term)) return false;
+  if(fc.value && !r.c.includes(fc.value)) return false;
+  if(fp.value && !r.p.includes(fp.value)) return false;
+  if(gFilter!=='' && String(r.g)!==gFilter) return false;
+  if(fk.value){
+    var rows = PROV[r.i] || [];
+    var ok = false;
+    for(var i=0;i<rows.length;i++){ if(rows[i][0]===fk.value){ ok = true; break; } }
+    if(!ok) return false;
+  }
+  return true;
+}
+
+function render(){
+  shown = recs.filter(matches);
+  clearBtn.style.display = q.value ? 'block' : 'none';
+
+  if(!shown.length){
+    list.innerHTML='';
+    countEl.innerHTML='';
+    list.insertAdjacentHTML('beforeend',
+      '<li class="empty">Nothing matches those settings. Widen the search term, or set the ' +
+      'filters back to <b>Any</b>.</li>');
+    return;
+  }
+  countEl.innerHTML = '<b>'+shown.length+'</b> of '+recs.length+' entries';
+
+  const frag = document.createDocumentFragment();
+  shown.forEach(r=>{
+    const li=document.createElement('li');
+    const meta = r.c.length ? r.c.join(', ') : 'Group heading — see its sub-entries';
+    li.innerHTML =
+      '<button class="row'+(r.c.length?'':' group')+'" type="button" data-i="'+esc(r.i)+'">'+
+        '<span class="ins">'+esc(r.i)+'</span>'+
+        '<span class="rname">'+esc(r.n)+'<span class="rmeta">'+esc(meta)+'</span></span>'+
+        '<span class="dot '+(r.g?'y':'n')+'" title="'+(r.g?'GSFA provision exists':'No GSFA provision found')+'"></span>'+
+      '</button>';
+    frag.appendChild(li);
+  });
+  list.innerHTML=''; list.appendChild(frag);
+  if(selected) markCurrent();
+}
+
+function markCurrent(){
+  list.querySelectorAll('.row').forEach(b=>
+    b.setAttribute('aria-current', b.dataset.i===selected ? 'true':'false'));
+}
+
+function provisionsHTML(r){
+  var rows = PROV[r.i];
+  if(!rows || !rows.length) return '';
+  var used = {}, body = '';
+  rows.forEach(function(p){
+    var hit = fk.value && p[0]===fk.value;
+    (p[2].match(/XS\d{2,4}[A-Za-z]?|\b\d{1,3}\b/g) || []).forEach(function(t){ used[t]=1; });
+    body += '<tr'+(hit?' class="hit"':'')+'>'+
+      '<td class="cno">'+esc(p[0])+'</td>'+
+      '<td>'+esc(CATS[p[0]] || '')+'</td>'+
+      '<td class="lv">'+esc(p[1])+'</td>'+
+      '<td class="nt">'+esc(p[2])+'</td>'+
+      '<td class="yr">'+esc(p[3])+'</td></tr>';
+  });
+  var keys = Object.keys(used).sort(function(a,b){
+    var an=/^\d+$/.test(a), bn=/^\d+$/.test(b);
+    if(an&&bn) return a-b; if(an) return -1; if(bn) return 1; return a<b?-1:1;
+  });
+  var gloss = '';
+  if(keys.length){
+    gloss = '<details class="notes"><summary>What the '+keys.length+
+      ' note reference'+(keys.length>1?'s':'')+' mean</summary><dl>';
+    keys.forEach(function(k){
+      gloss += '<dt>'+esc(k)+'</dt><dd>'+esc(NOTES[k]||'(not found in the notes glossary)')+'</dd>';
+    });
+    gloss += '</dl></details>';
+  }
+  return '<div class="section"><h3>Maximum use levels by food category &mdash; '+
+    rows.length+' provision'+(rows.length>1?'s':'')+' in Tables 1 and 2</h3>'+
+    '<div class="scroller"><table class="prov"><thead><tr>'+
+      '<th>Cat.</th><th>Food category</th><th>Max level</th><th>Notes</th><th>Adopted</th>'+
+    '</tr></thead><tbody>'+body+'</tbody></table></div>'+gloss+'</div>';
+}
+
+function show(ins){
+  const r = recs.find(x=>x.i===ins); if(!r) return;
+  selected = ins; markCurrent();
+
+  const mapRows = r.m.map(([c,ps])=>
+    '<dt>'+esc(c)+'</dt><dd>'+esc(ps.join(', '))+'</dd>').join('');
+
+  const gsfa = r.g
+    ? '<div class="status y"><div class="bar"></div><div>'+
+        '<div class="verdict">A GSFA 2026 provision exists</div>'+
+        '<div class="sub">'+esc(r.gt)+'. CXS 192-1995 page '+esc(r.gp)+'.<br>'+
+        ((PROV[r.i]&&PROV[r.i].length)
+          ? 'The food categories and maximum levels are listed below. Levels apply to the final '+
+            'product as consumed unless a note says otherwise.'
+          : 'Table 3 only &mdash; no individual Table 1 or 2 provision.')+'<br>'+
+        (r.gn?'<br>'+esc(r.gn):'')+'</div></div></div>'
+    : '<div class="status n"><div class="bar"></div><div>'+
+        '<div class="verdict">No GSFA 2026 provision found</div>'+
+        '<div class="sub">'+ (r.gn ? esc(r.gn)+'<br>' : '') +
+        'Absence from the General Standard does not mean an additive is unsafe or prohibited. '+
+        'The GSFA is not yet complete and says so itself.</div></div></div>';
+
+  detail.innerHTML =
+    '<div class="card">'+
+      '<div class="card-head">'+
+        '<span class="n">'+esc(r.i)+'</span>'+
+        '<h2>'+esc(r.n)+'</h2>'+
+        '<p class="tagline">'+ (r.t==='group'
+            ? 'Group heading in the source list, carrying no class or purpose of its own'
+            : 'Additive entry') +
+          (r.s==='supplementary' ? ' &mdash; supplementary list, modified starches' : '') +
+        '</p>'+
+      '</div>'+
+      gsfa +
+      (r.m.length
+        ? '<div class="section"><h3>Functional class and technological purpose</h3>'+
+          '<dl class="map">'+mapRows+'</dl></div>'
+        : '') +
+      provisionsHTML(r) +
+      (r.f
+        ? '<div class="section"><h3>Source note</h3><div class="flagbox">'+esc(r.f)+
+          (r.v?'<span class="verb">As extracted: '+esc(r.v)+'</span>':'')+'</div></div>'
+        : '') +
+      '<div class="section"><h3>Where this comes from</h3><dl class="src">'+
+        '<dt>Codex page</dt><dd>'+r.doc+'</dd>'+
+        '<dt>Source PDF page</dt><dd>'+r.pdf+'</dd>'+
+        '<dt>List</dt><dd>'+(r.s==='supplementary'
+            ? 'Supplementary list &ndash; modified starches'
+            : 'Section 3 &ndash; list in numerical order')+'</dd>'+
+      '</dl></div>'+
+    '</div>';
+
+  detail.scrollTop = 0;
+  var hit = detail.querySelector('tr.hit');
+  if(hit){
+    detail.scrollTop += hit.getBoundingClientRect().top -
+                        detail.getBoundingClientRect().top - 120;
+  }
+  document.body.classList.add('showing-detail');
+  if(window.matchMedia('(max-width:880px)').matches) $('#detailCol').scrollTop = 0;
+}
+
+/* ---------- events ---------- */
+list.addEventListener('click', e=>{
+  const b = e.target.closest('.row'); if(b) show(b.dataset.i);
+});
+['input','keyup','change','search'].forEach(function(ev){ q.addEventListener(ev, render); });
+fc.addEventListener('change', render);
+fp.addEventListener('change', render);
+fk.addEventListener('change', function(){ render(); if(selected) show(selected); });
+clearBtn.addEventListener('click', ()=>{ q.value=''; render(); q.focus(); });
+$('#back').addEventListener('click', ()=>document.body.classList.remove('showing-detail'));
+
+document.querySelectorAll('.seg button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    gFilter = btn.dataset.g;
+    document.querySelectorAll('.seg button').forEach(b=>
+      b.setAttribute('aria-pressed', String(b===btn)));
+    render();
+  });
+});
+
+$('#reset').addEventListener('click', ()=>{
+  q.value=''; fc.value=''; fp.value=''; fk.value=''; gFilter='';
+  document.querySelectorAll('.seg button').forEach(b=>
+    b.setAttribute('aria-pressed', String(b.dataset.g==='')));
+  render(); q.focus();
+});
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='/' && document.activeElement!==q){ e.preventDefault(); q.focus(); q.select(); }
+  if(e.key==='Escape'){
+    if(document.body.classList.contains('showing-detail') &&
+       window.matchMedia('(max-width:880px)').matches){
+      document.body.classList.remove('showing-detail');
+    } else if(document.activeElement===q && q.value){ q.value=''; render(); }
+  }
+  if((e.key==='ArrowDown'||e.key==='ArrowUp') && shown.length){
+    var rows=Array.prototype.slice.call(list.querySelectorAll('.row'));
+    const at=rows.indexOf(document.activeElement);
+    if(document.activeElement===q || at>-1){
+      e.preventDefault();
+      const next = at<0 ? 0 : Math.min(rows.length-1, Math.max(0, at + (e.key==='ArrowDown'?1:-1)));
+      rows[next].focus(); show(rows[next].dataset.i);
+    }
+  }
+});
+
+render();
+var boot = document.getElementById('boot');
+if(boot && boot.parentNode) boot.parentNode.removeChild(boot);
+
+// Collapsible footnotes
+function toggleDisc(){
+  var body = document.getElementById('discBody');
+  var icon = document.getElementById('discIcon');
+  var tab  = document.getElementById('discTab');
+  var collapsed = body.classList.toggle('collapsed');
+  icon.classList.toggle('collapsed', collapsed);
+  tab.setAttribute('aria-expanded', String(!collapsed));
+  // adjust main padding so results aren't hidden behind footer
+  updatePad();
+}
+function updatePad(){
+  var footer = document.querySelector('.disclaimer');
+  var shell  = document.querySelector('.shell');
+  if(footer && shell) shell.style.paddingBottom = (footer.offsetHeight + 16) + 'px';
+}
+// set initial padding
+setTimeout(updatePad, 50);
+window.addEventListener('resize', updatePad);
+}catch(err){
+  var b = document.getElementById('boot');
+  if(b){ b.innerHTML = '<b>The lookup could not start in this browser.</b>' +
+    'Please send this message back so it can be fixed: <code>' +
+    String(err && err.message ? err.message : err) + '</code>'; }
+}
+</script>
+</body>
+</html>
